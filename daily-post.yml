@@ -2,7 +2,6 @@ name: Daily TrendCatcher post
 
 on:
   schedule:
-    # 03:30 UTC = 08:30 Asia/Karachi (UTC+5)
     - cron: "30 3 * * *"
   workflow_dispatch: {}
 
@@ -20,6 +19,16 @@ jobs:
           python-version: "3.12"
 
       - run: pip install -r requirements.txt
+
+      - name: Debug secret presence
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY is EMPTY or missing"
+          else
+            echo "GEMINI_API_KEY is set, length: ${#GEMINI_API_KEY}"
+          fi
 
       - name: Generate and publish today's post
         env:
