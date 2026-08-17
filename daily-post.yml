@@ -4,10 +4,10 @@ on:
   schedule:
     # 03:30 UTC = 08:30 Asia/Karachi (UTC+5)
     - cron: "30 3 * * *"
-  workflow_dispatch: {}  # lets you trigger a manual test run from the Actions tab
+  workflow_dispatch: {}
 
 permissions:
-  contents: write  # needed to commit posted_log.json back to the repo
+  contents: write
 
 jobs:
   post:
@@ -25,7 +25,7 @@ jobs:
         env:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python main.py
 
       - name: Persist posted-article log
