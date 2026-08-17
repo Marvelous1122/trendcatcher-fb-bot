@@ -24,7 +24,7 @@ from rss_sources import PILLARS
 
 STATE_FILE = "posted_log.json"
 MAX_LOG_ENTRIES = 300
-MODEL = "claude-sonnet-5"
+MODEL = "gemini-3.5-flash"
 
 BRAND_SYSTEM_PROMPT = """You draft short Facebook posts for TrendCatcher, a \
 cybersecurity/bug-bounty/AI-security news brand page (no personal name, no \
@@ -82,34 +82,35 @@ def _fetch_candidate_entry(pillar_key, posted_links):
     if not candidates:
         return None
 
-    # Most recent first (entries without a parsed date sort last).
     candidates.sort(key=lambda c: c[0] or datetime.datetime.min.timetuple(), reverse=True)
     _, title, summary, link = candidates[0]
     return {"title": title, "summary": summary, "link": link}
 
 
 def _draft_from_article(article):
-    client = Anthropic()  # reads ANTHROPIC_API_KEY from env
+    client = genai.Client()  # reads GEMINI_API_KEY (or GOOGLE_API_KEY) from env
     user_prompt = (
         f"Article title: {article['title']}\n"
         f"Article summary: {article['summary']}\n"
         f"Source link: {article['link']}\n\n"
         "Draft the TrendCatcher Facebook post now."
     )
-    resp = client.messages.create(
+    resp = client.models.generate_content(
         model=MODEL,
-        max_tokens=400,
-        system=BRAND_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
+        contents=user_prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=BRAND_SYSTEM_PROMPT,
+            max_output_tokens=400,
+        ),
     )
-    return resp.content[0].text.strip()
+    return resp.text.strip()
 
 
 def build_todays_post():
     """Returns the finished post text (string) for today, or None if
     nothing safe could be produced (caller should skip posting)."""
     today = datetime.datetime.utcnow()
-    weekday = today.strftime("%A").lower()  # 'monday', 'tuesday', ...
+    weekday = today.strftime("%A").lower()
     week_number = today.isocalendar()[1]
 
     if weekday == "tuesday":
@@ -118,14 +119,11 @@ def build_todays_post():
         return pick(ENGAGEMENT_POSTS, week_number)
 
     if weekday not in PILLARS:
-        # Shouldn't happen (all 7 days are covered), but fail safe.
         return None
 
     state = _load_state()
     article = _fetch_candidate_entry(weekday, state["posted_links"])
     if article is None:
-        # No fresh, unused, on-topic article found today — skip rather
-        # than risk a stale/low-quality auto-generated post.
         return None
 
     post_text = _draft_from_article(article)
