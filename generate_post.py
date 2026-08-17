@@ -16,7 +16,8 @@ import json
 import os
 
 import feedparser
-from anthropic import Anthropic
+from google import genai
+from google.genai import types
 
 from content_bank import BB_TIPS, ENGAGEMENT_POSTS, pick
 from rss_sources import PILLARS
