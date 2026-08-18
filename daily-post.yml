@@ -1,9 +1,8 @@
-name: Daily TrendCatcher post
+name: TrendCatcher post (every 3 hours)
 
 on:
   schedule:
-    # 03:30 UTC = 08:30 Asia/Karachi (UTC+5)
-    - cron: "30 3 * * *"
+    - cron: "15 */3 * * *"  # 8 times/day, offset from the hour
   workflow_dispatch: {}  # lets you trigger a manual test run from the Actions tab
 
 permissions:
@@ -21,27 +20,17 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      - name: Debug secret presence
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          if [ -z "$GEMINI_API_KEY" ]; then
-            echo "GEMINI_API_KEY is EMPTY or missing"
-          else
-            echo "GEMINI_API_KEY is set, length: ${#GEMINI_API_KEY}"
-          fi
-
-      - name: Generate and publish today's post
+      - name: Generate and publish this run's post
         env:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python main.py
 
-      - name: Persist posted-article log
+      - name: Persist posted-item log
         run: |
           git config user.name "trendcatcher-bot"
           git config user.email "actions@users.noreply.github.com"
           git add posted_log.json
-          git diff --cached --quiet || git commit -m "Update posted-article log [skip ci]"
+          git diff --cached --quiet || git commit -m "Update posted-item log [skip ci]"
           git push

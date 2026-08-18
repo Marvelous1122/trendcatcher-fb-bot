@@ -2,12 +2,12 @@
 
 import sys
 
-from generate_post import build_todays_post
+from generate_post import build_next_post
 from publish_fb import post_text
 
 
 def main():
-    post = build_todays_post()
+    post = build_next_post()
 
     if not post:
         print("No suitable content found for today — skipping post (safe fallback).")
